@@ -116,9 +116,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   ConfigureAlwaysOnTop(hWnd, isAlwaysOnTop);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+   ConfigureAlwaysOnTop(hWnd, isAlwaysOnTop);
 
    SetTimer(hWnd,             // handle to main window 
 	   IDT_TIMER,            // timer identifier 

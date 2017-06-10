@@ -12,7 +12,9 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING] = L"";                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-DWORD drawingBrush = LTGRAY_BRUSH;
+HBRUSH drawingBrush;
+const HBRUSH LightWhiteBrush = CreateSolidBrush(RGB(254, 254, 254));
+const HBRUSH WhiteBrush = CreateSolidBrush(RGB(255, 255, 255));
 const DWORD WindowSize = 50;
 bool isAlwaysOnTop = true;
 
@@ -45,6 +47,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FLASHINGWINDOW));
 
     MSG msg;
+	drawingBrush = LightWhiteBrush;
 
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
@@ -58,7 +61,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     return (int) msg.wParam;
 }
-
 
 
 //
@@ -139,7 +141,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
 	case WM_TIMER:
-		drawingBrush = drawingBrush == LTGRAY_BRUSH ? WHITE_BRUSH : LTGRAY_BRUSH;
+		drawingBrush = drawingBrush == LightWhiteBrush ? WhiteBrush : LightWhiteBrush;
 		InvalidateRect(hWnd, nullptr, false);
 		break;
     case WM_COMMAND:
@@ -164,9 +166,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-			SelectObject(hdc, GetStockObject(drawingBrush));
-			SelectObject(hdc, GetStockObject(NULL_PEN));
-			Rectangle(hdc, 0, 0, WindowSize, WindowSize);
+			RECT rect = { 0, 0, WindowSize, WindowSize };
+			FillRect(hdc, &rect, drawingBrush);
             EndPaint(hWnd, &ps);
         }
         break;
@@ -189,7 +190,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		ClientToScreen(hWnd, &pt);
 		HMENU hPopupMenu = CreatePopupMenu();
 		InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, ID_CLOSE, L"Close");
-		InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING | MF_CHECKED, ID_ALWAYSVISIBLE, L"Alway On Top");
+
+		DWORD alwaysOnTopMenuFlags = MF_BYPOSITION | MF_STRING;
+		if (isAlwaysOnTop) alwaysOnTopMenuFlags |= MF_CHECKED;
+		InsertMenu(hPopupMenu, 0,  alwaysOnTopMenuFlags, ID_ALWAYSVISIBLE, L"Alway On Top");
+
 		SetForegroundWindow(hWnd);
 		TrackPopupMenu(hPopupMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
 		break;
@@ -201,24 +206,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
 }

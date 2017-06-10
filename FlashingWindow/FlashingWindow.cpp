@@ -12,11 +12,14 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING] = L"";                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-HBRUSH drawingBrush;
+bool drawAlternateColor = true;
 const HBRUSH LightWhiteBrush = CreateSolidBrush(RGB(254, 254, 254));
 const HBRUSH WhiteBrush = CreateSolidBrush(RGB(255, 255, 255));
+const HBRUSH DarkGrayBrush = CreateSolidBrush(RGB(1, 1, 1));
+const HBRUSH BlackBrush = CreateSolidBrush(RGB(0, 0, 0));
 const DWORD WindowSize = 50;
 bool isAlwaysOnTop = true;
+bool darkTheme = true;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -47,9 +50,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FLASHINGWINDOW));
 
     MSG msg;
-	drawingBrush = LightWhiteBrush;
 
-    // Main message loop:
+	// Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -141,7 +143,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
 	case WM_TIMER:
-		drawingBrush = drawingBrush == LightWhiteBrush ? WhiteBrush : LightWhiteBrush;
+		drawAlternateColor = !drawAlternateColor;
 		InvalidateRect(hWnd, nullptr, false);
 		break;
     case WM_COMMAND:
@@ -157,19 +159,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				isAlwaysOnTop = !isAlwaysOnTop;
 				ConfigureAlwaysOnTop(hWnd, isAlwaysOnTop);
 				break;
-            default:
+			case ID_DARKTHEME:
+				darkTheme = !darkTheme;
+				InvalidateRect(hWnd, nullptr, false);
+				break;
+			default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
         }
         break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-			RECT rect = { 0, 0, WindowSize, WindowSize };
-			FillRect(hdc, &rect, drawingBrush);
-            EndPaint(hWnd, &ps);
-        }
+	{
+		auto drawingBrush = darkTheme ?
+			(drawAlternateColor ? DarkGrayBrush : BlackBrush)
+			: (drawAlternateColor ? LightWhiteBrush : WhiteBrush);
+
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		RECT rect = { 0, 0, WindowSize, WindowSize };
+		FillRect(hdc, &rect, drawingBrush);
+		EndPaint(hWnd, &ps);
+	}
         break;
 	case WM_NCHITTEST:
 	{
@@ -189,11 +199,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		pt.y = ps.y;
 		ClientToScreen(hWnd, &pt);
 		HMENU hPopupMenu = CreatePopupMenu();
-		InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, ID_CLOSE, L"Close");
 
-		DWORD alwaysOnTopMenuFlags = MF_BYPOSITION | MF_STRING;
-		if (isAlwaysOnTop) alwaysOnTopMenuFlags |= MF_CHECKED;
-		InsertMenu(hPopupMenu, 0,  alwaysOnTopMenuFlags, ID_ALWAYSVISIBLE, L"Alway On Top");
+		DWORD menuFlags = MF_BYPOSITION | MF_STRING;
+		if (isAlwaysOnTop) menuFlags |= MF_CHECKED;
+		InsertMenu(hPopupMenu, 0, menuFlags, ID_ALWAYSVISIBLE, L"Always On Top");
+
+		menuFlags = MF_BYPOSITION | MF_STRING;
+		if (darkTheme) menuFlags |= MF_CHECKED;
+		InsertMenu(hPopupMenu, 1, menuFlags, ID_DARKTHEME, L"Dark Theme");
+
+		InsertMenu(hPopupMenu, 2, MF_BYPOSITION | MF_STRING, ID_CLOSE, L"Close");
 
 		SetForegroundWindow(hWnd);
 		TrackPopupMenu(hPopupMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);

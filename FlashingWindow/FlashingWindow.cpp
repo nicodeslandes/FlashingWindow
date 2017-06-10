@@ -3,13 +3,18 @@
 
 #include "stdafx.h"
 #include "FlashingWindow.h"
+#include "resource.h"
 
 #define MAX_LOADSTRING 100
+#define IDT_TIMER 1
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
+WCHAR szTitle[MAX_LOADSTRING] = L"";                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+DWORD drawingBrush = LTGRAY_BRUSH;
+const DWORD WindowSize = 50;
+bool isAlwaysOnTop = true;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -28,7 +33,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // TODO: Place code here.
 
     // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_FLASHINGWINDOW, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
@@ -76,13 +80,16 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FLASHINGWINDOW));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_FLASHINGWINDOW);
+    wcex.lpszMenuName   = _T("");
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
 }
 
+VOID ConfigureAlwaysOnTop(HWND hWnd, bool alwaysOnTop) {
+	SetWindowPos(hWnd, alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
 //
 //   FUNCTION: InitInstance(HINSTANCE, int)
 //
@@ -97,16 +104,22 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_POPUP,
+      300, 300, WindowSize, WindowSize, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
       return FALSE;
    }
 
+   ConfigureAlwaysOnTop(hWnd, isAlwaysOnTop);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   SetTimer(hWnd,             // handle to main window 
+	   IDT_TIMER,            // timer identifier 
+	   1000,                 // 1-second interval 
+	   (TIMERPROC)NULL);     // no timer callback 
 
    return TRUE;
 }
@@ -125,18 +138,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+	case WM_TIMER:
+		drawingBrush = drawingBrush == LTGRAY_BRUSH ? WHITE_BRUSH : LTGRAY_BRUSH;
+		InvalidateRect(hWnd, nullptr, false);
+		break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
             // Parse the menu selections:
             switch (wmId)
             {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
+			case ID_CLOSE:
+				SendMessage(hWnd, WM_CLOSE, 0, 0);
+				break;
+			case ID_ALWAYSVISIBLE:
+				isAlwaysOnTop = !isAlwaysOnTop;
+				ConfigureAlwaysOnTop(hWnd, isAlwaysOnTop);
+				break;
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -146,11 +164,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
+			SelectObject(hdc, GetStockObject(drawingBrush));
+			SelectObject(hdc, GetStockObject(NULL_PEN));
+			Rectangle(hdc, 0, 0, WindowSize, WindowSize);
             EndPaint(hWnd, &ps);
         }
         break;
-    case WM_DESTROY:
+	case WM_NCHITTEST:
+	{
+		// Call the default window procedure for default handling.
+		const LRESULT result = ::DefWindowProc(hWnd, message, wParam, lParam);
+
+		if (GetAsyncKeyState(VK_LBUTTON) & VK_LBUTTON && result == HTCLIENT)
+			return HTCAPTION;
+		else
+			return result;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		POINTS ps = MAKEPOINTS(lParam);
+		POINT pt;
+		pt.x = ps.x;
+		pt.y = ps.y;
+		ClientToScreen(hWnd, &pt);
+		HMENU hPopupMenu = CreatePopupMenu();
+		InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, ID_CLOSE, L"Close");
+		InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING | MF_CHECKED, ID_ALWAYSVISIBLE, L"Alway On Top");
+		SetForegroundWindow(hWnd);
+		TrackPopupMenu(hPopupMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
+		break;
+	}
+	case WM_DESTROY:
         PostQuitMessage(0);
         break;
     default:

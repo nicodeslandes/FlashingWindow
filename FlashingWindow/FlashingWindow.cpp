@@ -15,7 +15,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 bool drawAlternateColor = true;
 const HBRUSH LightWhiteBrush = CreateSolidBrush(RGB(254, 254, 254));
 const HBRUSH WhiteBrush = CreateSolidBrush(RGB(255, 255, 255));
-const HBRUSH DarkGrayBrush = CreateSolidBrush(RGB(1, 1, 1));
+const HBRUSH DarkGrayBrush = CreateSolidBrush(RGB(10, 10, 10));
 const HBRUSH BlackBrush = CreateSolidBrush(RGB(0, 0, 0));
 const DWORD WindowSize = 50;
 bool isAlwaysOnTop = true;
@@ -122,7 +122,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    SetTimer(hWnd,             // handle to main window 
 	   IDT_TIMER,            // timer identifier 
-	   1000,                 // 1-second interval 
+	   1000,                 // interval in ms
 	   (TIMERPROC)NULL);     // no timer callback 
 
    return TRUE;

@@ -5,7 +5,7 @@ Useful as a workaround to a
 [display bug](https://answers.microsoft.com/en-us/surface/forum/surfpro4-surfdrivers/surface-pro-4-screen-flickering-shacking/570165cb-50a0-4d71-bcb1-310ddd869d1d)
 on Surface Tablets that causes them to flicker if there no activity on screen.
 
-[![Build Status]([https://ci.appveyor.com/api/projects/status/github/nicodeslandes/FlashingWindow?svg=true&branch=master)]([https://ci.appveyor.com/api/projects/status/github/nicodeslandes/FlashingWindow?svg=true&branch=master)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/nicodeslandes/FlashingWindow?svg=true&branch=master)](https://ci.appveyor.com/api/projects/status/github/nicodeslandes/FlashingWindow?svg=true&branch=master)
 
 ## Usage
 

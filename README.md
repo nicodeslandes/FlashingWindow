@@ -11,7 +11,7 @@ Start the app; it will display a black square moving between 2 dark colors.
 
 You can then drag it to a corner of the tablet screen, and it will cause the flicker to stop.
 
-### Options
+## Options
 The following options are available when you right-click on the app:
 * Dark Theme: Switch between a light and dark theme for the 2 colors the app uses (default: `dark`)
 * Always On Top: Causes the app to remain on top of other windows (default: `on`)

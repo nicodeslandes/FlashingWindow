@@ -17,7 +17,7 @@ const HBRUSH LightWhiteBrush = CreateSolidBrush(RGB(254, 254, 254));
 const HBRUSH WhiteBrush = CreateSolidBrush(RGB(255, 255, 255));
 const HBRUSH DarkGrayBrush = CreateSolidBrush(RGB(10, 10, 10));
 const HBRUSH BlackBrush = CreateSolidBrush(RGB(0, 0, 0));
-const DWORD WindowSize = 50;
+const DWORD WindowSize = 20;
 bool isAlwaysOnTop = true;
 bool darkTheme = true;
 
